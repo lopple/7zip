@@ -1,0 +1,14 @@
+/build/
+/CPP/7zip/Bundles/Fm/x64/
+/CPP/7zip/UI/GUI/x64/
+/.codex-tmp-build/
+/.agents/
+*.obj
+*.res
+*.pch
+*.exp
+*.lib
+*.exe
+*.dll
+*.tar.xz
+$null
