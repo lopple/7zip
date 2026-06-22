@@ -1,5 +1,6 @@
 /build/
 /CPP/7zip/Bundles/Fm/x64/
+/CPP/7zip/UI/Explorer/x64/
 /CPP/7zip/UI/GUI/x64/
 /.codex-tmp-build/
 /.agents/

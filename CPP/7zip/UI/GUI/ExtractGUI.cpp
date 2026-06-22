@@ -195,7 +195,7 @@ HRESULT ExtractGUI(
     HWND hwndParent)
 {
   messageWasDisplayed = false;
-  bool openDestFolder = false;
+  bool openDestFolder = options.OpenDestFolderAfterExtract;
 
   CThreadExtracting extracter;
   /*
