@@ -117,6 +117,7 @@ bool CSettingsPage::OnInit()
   _wasChanged = false;
   _largePages_wasChanged = false;
   _memx_wasChanged = false;
+  _extractSettings_wasChanged = false;
   /*
   _wasChanged_MemLimit = false;
   _memLimitStrings.Clear();
@@ -144,6 +145,8 @@ bool CSettingsPage::OnInit()
     CheckButton(IDX_SETTINGS_LARGE_PAGES, ReadLockMemoryEnable());
   else
     EnableItem(IDX_SETTINGS_LARGE_PAGES, false);
+
+  CheckButton(IDX_SETTINGS_EXTRACT_TO_ARC_NAME, NExtract::Read_DefaultToArcNameFolder());
 
 
   /*
@@ -321,6 +324,12 @@ LONG CSettingsPage::OnApply()
     _memx_wasChanged = false;
   }
 
+  if (_extractSettings_wasChanged)
+  {
+    NExtract::Save_DefaultToArcNameFolder(IsButtonCheckedBool(IDX_SETTINGS_EXTRACT_TO_ARC_NAME));
+    _extractSettings_wasChanged = false;
+  }
+
   /*
   if (_wasChanged_MemLimit)
   {
@@ -431,6 +440,10 @@ bool CSettingsPage::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
     case IDX_SETTINGS_SHOW_GRID:
     case IDX_SETTINGS_ALTERNATIVE_SELECTION:
       _wasChanged = true;
+      break;
+
+    case IDX_SETTINGS_EXTRACT_TO_ARC_NAME:
+      _extractSettings_wasChanged = true;
       break;
 
     case IDX_SETTINGS_LARGE_PAGES:

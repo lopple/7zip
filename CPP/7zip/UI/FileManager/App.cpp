@@ -29,6 +29,8 @@
 
 #include "PropertyNameRes.h"
 
+#include "../Common/ZipRegistry.h"
+
 using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
@@ -38,6 +40,9 @@ using namespace NName;
 extern HINSTANCE g_hInstance;
 
 #define kTempDirPrefix FTEXT("7zE")
+
+// function from ContextMenu.cpp
+UString GetSubFolderNameForExtract(const UString &arcName);
 
 static void OpenFolderInExplorer(CFSTR path)
 {
@@ -50,6 +55,28 @@ static void OpenFolderInExplorer(CFSTR path)
   #else
   ::ShellExecute(NULL, NULL, path, NULL, NULL, SW_SHOWNORMAL);
   #endif
+}
+
+static bool GetArchiveNameFolder(const CPanel &panel, UString &path)
+{
+  if (panel._parentFolders.IsEmpty())
+    return false;
+
+  const CFolderLink &link = panel._parentFolders[0];
+  if (link.ParentFolderPath.IsEmpty() || link.RelPath.IsEmpty())
+    return false;
+
+  UString arcName = link.RelPath;
+  const int pos = arcName.ReverseFind_PathSepar();
+  if (pos >= 0)
+    arcName.DeleteFrontal((unsigned)(pos + 1));
+  if (arcName.IsEmpty())
+    return false;
+
+  path = link.ParentFolderPath;
+  path += GetSubFolderNameForExtract(arcName);
+  path.Add_PathSepar();
+  return true;
 }
 
 void CPanelCallbackImp::OnTab()
@@ -621,6 +648,12 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
       destPath = destPanel.GetFsPath();
       if (NumPanels == 1)
         Reduce_Path_To_RealFileSystemPath(destPath);
+      if (NExtract::Read_DefaultToArcNameFolder())
+      {
+        UString archiveNameFolder;
+        if (GetArchiveNameFolder(srcPanel, archiveNameFolder))
+          destPath = archiveNameFolder;
+      }
     }
   }
   
