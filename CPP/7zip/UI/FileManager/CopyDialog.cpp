@@ -16,10 +16,17 @@
 
 using namespace NWindows;
 
+#ifdef Z7_LANG
+static const UInt32 kLangIDs[] =
+{
+  IDX_COPY_OPEN_DEST_FOLDER
+};
+#endif
+
 bool CCopyDialog::OnInit()
 {
   #ifdef Z7_LANG
-  LangSetDlgItems(*this, NULL, 0);
+  LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
   #endif
   #ifndef Z7_NO_REGISTRY
   OpenDestFolder = NExtract::Read_OpenDestFolder();
