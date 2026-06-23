@@ -1,19 +1,12 @@
 param(
   [string]$SourceLangRoot = 'C:\Program Files\7-Zip\Lang',
+  [string]$TranslationsPath,
   [string]$StageRoot,
   [switch]$NoClean
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-
-function Get-Utf8TextFromBase64 {
-  param(
-    [Parameter(Mandatory=$true)]
-    [string]$Value
-  )
-  return [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
-}
 
 function Find-LineIndex {
   param(
@@ -31,7 +24,26 @@ function Find-LineIndex {
   throw "Could not find marker: $Marker"
 }
 
-function Get-NextLangIdBeforeMarker {
+function Find-NextNumericMarkerIndex {
+  param(
+    [Parameter(Mandatory=$true)]
+    $Lines,
+    [Parameter(Mandatory=$true)]
+    [int]$StartIndex
+  )
+
+  for ($i = $StartIndex + 1; $i -lt $Lines.Count; $i++) {
+    $line = ([string]$Lines[$i]).Trim()
+    $numericValue = 0
+    if ([int]::TryParse($line, [ref]$numericValue)) {
+      return $i
+    }
+  }
+
+  return $Lines.Count
+}
+
+function Get-NextLangIdBeforeIndex {
   param(
     [Parameter(Mandatory=$true)]
     $Lines,
@@ -40,26 +52,22 @@ function Get-NextLangIdBeforeMarker {
     [Parameter(Mandatory=$true)]
     [int]$StartIndex,
     [Parameter(Mandatory=$true)]
-    [string]$EndMarker
+    [int]$EndIndex
   )
 
   $currentId = $StartId
-  for ($i = $StartIndex + 1; $i -lt $Lines.Count; $i++) {
+  for ($i = $StartIndex + 1; $i -lt $EndIndex; $i++) {
     $line = [string]$Lines[$i]
-    if ($line -eq $EndMarker) {
-      return $currentId
-    }
-
     $trimmed = $line.Trim()
     $numericValue = 0
     if ([int]::TryParse($trimmed, [ref]$numericValue)) {
-      throw "Unexpected language marker before ${EndMarker}: $trimmed"
+      throw "Unexpected language marker before index ${EndIndex}: $trimmed"
     }
 
     $currentId++
   }
 
-  throw "Could not find marker: $EndMarker"
+  return $currentId
 }
 
 function Update-LangFile {
@@ -94,8 +102,8 @@ function Update-LangFile {
 
   if (-not $list.Contains($SettingsText)) {
     $index2500 = Find-LineIndex -Lines $list -Marker '2500'
-    $index2900 = Find-LineIndex -Lines $list -Marker '2900'
-    $nextId = Get-NextLangIdBeforeMarker -Lines $list -StartId 2500 -StartIndex $index2500 -EndMarker '2900'
+    $index2900 = Find-NextNumericMarkerIndex -Lines $list -StartIndex $index2500
+    $nextId = Get-NextLangIdBeforeIndex -Lines $list -StartId 2500 -StartIndex $index2500 -EndIndex $index2900
     while ($nextId -lt 2509) {
       $list.Insert($index2900, '')
       $index2900++
@@ -108,18 +116,25 @@ function Update-LangFile {
   }
 
   if (-not $list.Contains($ExtractText)) {
-    $index3430 = Find-LineIndex -Lines $list -Marker '3430'
-    $index3440 = Find-LineIndex -Lines $list -Marker '3440'
-    $nextId = Get-NextLangIdBeforeMarker -Lines $list -StartId 3430 -StartIndex $index3430 -EndMarker '3440'
-    while ($nextId -lt 3433) {
-      $list.Insert($index3440, '')
-      $index3440++
-      $nextId++
+    if ($list.Contains('3430')) {
+      $index3430 = Find-LineIndex -Lines $list -Marker '3430'
+      $index3440 = Find-NextNumericMarkerIndex -Lines $list -StartIndex $index3430
+      $nextId = Get-NextLangIdBeforeIndex -Lines $list -StartId 3430 -StartIndex $index3430 -EndIndex $index3440
+      while ($nextId -lt 3433) {
+        $list.Insert($index3440, '')
+        $index3440++
+        $nextId++
+      }
+      if ($nextId -ne 3433) {
+        throw "Unexpected extract insertion id in ${LangPath}: $nextId"
+      }
+      $list.Insert($index3440, $ExtractText)
     }
-    if ($nextId -ne 3433) {
-      throw "Unexpected extract insertion id in ${LangPath}: $nextId"
+    else {
+      $index3500 = Find-LineIndex -Lines $list -Marker '3500'
+      $list.Insert($index3500, '3433')
+      $list.Insert($index3500 + 1, $ExtractText)
     }
-    $list.Insert($index3440, $ExtractText)
   }
 
   $updated = $list.ToArray() -join "`n"
@@ -175,8 +190,38 @@ function Write-TextFileAscii {
   [System.IO.File]::WriteAllText($Path, $Text, [System.Text.Encoding]::ASCII)
 }
 
+function Read-Translations {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$Path
+  )
+
+  $resolved = Resolve-Path -LiteralPath $Path
+  $json = [System.IO.File]::ReadAllText($resolved.Path, [System.Text.Encoding]::UTF8)
+  $records = $json | ConvertFrom-Json
+  $map = @{}
+  foreach ($record in $records) {
+    if ([string]::IsNullOrEmpty($record.file) -or
+        [string]::IsNullOrEmpty($record.copy) -or
+        [string]::IsNullOrEmpty($record.settings) -or
+        [string]::IsNullOrEmpty($record.extract)) {
+      throw "Invalid translation record in $($resolved.Path)"
+    }
+    $map[[string]$record.file] = [PSCustomObject]@{
+      FileName = [string]$record.file
+      CopyText = [string]$record.copy
+      SettingsText = [string]$record.settings
+      ExtractText = [string]$record.extract
+    }
+  }
+  return $map
+}
+
 $scriptDir = Split-Path -Parent $PSCommandPath
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $scriptDir '..')
+if ([string]::IsNullOrEmpty($TranslationsPath)) {
+  $TranslationsPath = Join-Path $scriptDir 'lang-extra-translations.json'
+}
 $buildRoot = Join-Path $repoRoot.Path 'build'
 if (-not (Test-Path -LiteralPath $buildRoot)) {
   New-Item -ItemType Directory -Path $buildRoot | Out-Null
@@ -239,22 +284,20 @@ $langSourceFiles | ForEach-Object {
   Copy-Item -LiteralPath $_.FullName -Destination $dest -Force
 }
 
-$translations = @(
-  [PSCustomObject]@{
-    FileName = 'en.ttt'
-    CopyText = 'Open destination folder after copy/extract'
-    SettingsText = 'Default extract/copy destination to archive-name folder'
-    ExtractText = 'Open destination folder after extraction'
-  },
-  [PSCustomObject]@{
-    FileName = 'ja.txt'
-    CopyText = Get-Utf8TextFromBase64 -Value '44Kz44OU44O8L+WxlemWi+W+jOOBq+WHuuWKm+WFiOODleOCqeODq+ODgOODvOOCkumWi+OBjw=='
-    SettingsText = Get-Utf8TextFromBase64 -Value '5bGV6ZaLL+OCs+ODlOODvOWFiOOBruWIneacn+WApOOCkuOCouODvOOCq+OCpOODluWQjeODleOCqeODq+ODgOODvOOBq+OBmeOCiw=='
-    ExtractText = Get-Utf8TextFromBase64 -Value '5bGV6ZaL5b6M44Gr5bGV6ZaL5YWI44OV44Kp44Or44OA44O844KS6ZaL44GP'
-  }
-)
+$translations = Read-Translations -Path $TranslationsPath
+Write-Host "Translations: $TranslationsPath"
 
-foreach ($translation in $translations) {
+$missingTranslations = @()
+Get-ChildItem -LiteralPath $payloadLang -File | ForEach-Object {
+  if (-not $translations.ContainsKey($_.Name)) {
+    $missingTranslations += $_.Name
+  }
+}
+if ($missingTranslations.Count -ne 0) {
+  throw ('Missing language translations: ' + ($missingTranslations -join ', '))
+}
+
+foreach ($translation in $translations.Values) {
   $langFile = Join-Path $payloadLang $translation.FileName
   if (Test-Path -LiteralPath $langFile) {
     Write-Host "Patch language file: $($translation.FileName)"
