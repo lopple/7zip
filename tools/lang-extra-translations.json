@@ -39,7 +39,7 @@
   {"file":"io.txt","copy":"Apertez la destinuyo-dosieruyo pos kopiado/extraktado","extract":"Apertez la destinuyo-dosieruyo pos extraktado"},
   {"file":"is.txt","copy":"Opna áfangamöppu eftir afritun/afþjöppun","extract":"Opna áfangamöppu eftir afþjöppun"},
   {"file":"it.txt","copy":"Apri la cartella di destinazione dopo copia/estrazione","extract":"Apri la cartella di destinazione dopo l'estrazione"},
-  {"file":"ja.txt","copy":"コピー/展開後に出力先フォルダーを開く","extract":"展開後に出力先フォルダーを開く"},
+  {"file":"ja.txt","copy":"展開後に出力先フォルダーを開く","extract":"展開後に出力先フォルダーを開く"},
   {"file":"ka.txt","copy":"დანიშნულების საქაღალდის გახსნა კოპირების/ამოღების შემდეგ","extract":"დანიშნულების საქაღალდის გახსნა ამოღების შემდეგ"},
   {"file":"kaa.txt","copy":"Kóshiriw/shıǵarıwdan keyin maqset qaltanı ash","extract":"Shıǵarıwdan keyin maqset qaltanı ash"},
   {"file":"kab.txt","copy":"Ldi akaram n yiccan deffir anɣal/asuffeɣ","extract":"Ldi akaram n yiccan deffir usuffeɣ"},
