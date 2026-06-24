@@ -39,7 +39,7 @@
   {"file":"io.txt","copy":"Apertez la destinuyo-dosieruyo pos kopiado/extraktado","settings":"Uzez dosieruyo kun la arkivonomo kom defolta destinuyo por extraktar/kopiar","extract":"Apertez la destinuyo-dosieruyo pos extraktado"},
   {"file":"is.txt","copy":"Opna áfangamöppu eftir afritun/afþjöppun","settings":"Nota möppu með heiti safnskrár sem sjálfgefinn áfangastað fyrir afþjöppun/afritun","extract":"Opna áfangamöppu eftir afþjöppun"},
   {"file":"it.txt","copy":"Apri la cartella di destinazione dopo copia/estrazione","settings":"Usa la cartella con il nome dell'archivio come destinazione predefinita per estrazione/copia","extract":"Apri la cartella di destinazione dopo l'estrazione"},
-  {"file":"ja.txt","copy":"コピー/展開後に出力先フォルダーを開く","settings":"展開/コピー先の初期値をアーカイブ名フォルダーにする","extract":"展開後に展開先フォルダーを開く"},
+  {"file":"ja.txt","copy":"コピー/展開後に出力先フォルダーを開く","settings":"コピー/展開時の出力先フォルダーの初期値をアーカイブ名フォルダーにする","extract":"展開後に出力先フォルダーを開く"},
   {"file":"ka.txt","copy":"დანიშნულების საქაღალდის გახსნა კოპირების/ამოღების შემდეგ","settings":"არქივის სახელის საქაღალდის გამოყენება ამოღების/კოპირების ნაგულისხმევ დანიშნულებად","extract":"დანიშნულების საქაღალდის გახსნა ამოღების შემდეგ"},
   {"file":"kaa.txt","copy":"Kóshiriw/shıǵarıwdan keyin maqset qaltanı ash","settings":"Shıǵarıw/kóshiriw ushın arhiv atı qaltasın ádepki maqset retinde paydalan","extract":"Shıǵarıwdan keyin maqset qaltanı ash"},
   {"file":"kab.txt","copy":"Ldi akaram n yiccan deffir anɣal/asuffeɣ","settings":"Seqdec akaram s yisem n uɣbar am yiccan amezwer i usuffeɣ/anɣal","extract":"Ldi akaram n yiccan deffir usuffeɣ"},

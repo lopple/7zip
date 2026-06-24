@@ -43,31 +43,77 @@ function Find-NextNumericMarkerIndex {
   return $Lines.Count
 }
 
-function Get-NextLangIdBeforeIndex {
+function Set-ExplicitLangIdText {
   param(
     [Parameter(Mandatory=$true)]
     $Lines,
     [Parameter(Mandatory=$true)]
-    [int]$StartId,
+    [string]$Marker,
     [Parameter(Mandatory=$true)]
-    [int]$StartIndex,
+    [string]$Text,
     [Parameter(Mandatory=$true)]
-    [int]$EndIndex
+    [string]$InsertBeforeMarker
   )
 
+  if ($Lines.Contains($Marker)) {
+    $index = Find-LineIndex -Lines $Lines -Marker $Marker
+    $endIndex = Find-NextNumericMarkerIndex -Lines $Lines -StartIndex $index
+    $textIndex = $index + 1
+    if ($textIndex -lt $endIndex) {
+      $Lines[$textIndex] = $Text
+    }
+    else {
+      $Lines.Insert($textIndex, $Text)
+    }
+  }
+  else {
+    $insertIndex = Find-LineIndex -Lines $Lines -Marker $InsertBeforeMarker
+    $Lines.Insert($insertIndex, $Marker)
+    $Lines.Insert($insertIndex + 1, $Text)
+  }
+}
+
+function Set-LangIdTextInBlock {
+  param(
+    [Parameter(Mandatory=$true)]
+    $Lines,
+    [Parameter(Mandatory=$true)]
+    [string]$StartMarker,
+    [Parameter(Mandatory=$true)]
+    [int]$StartId,
+    [Parameter(Mandatory=$true)]
+    [int]$TargetId,
+    [Parameter(Mandatory=$true)]
+    [string]$Text
+  )
+
+  $startIndex = Find-LineIndex -Lines $Lines -Marker $StartMarker
+  $endIndex = Find-NextNumericMarkerIndex -Lines $Lines -StartIndex $startIndex
   $currentId = $StartId
-  for ($i = $StartIndex + 1; $i -lt $EndIndex; $i++) {
+
+  for ($i = $startIndex + 1; $i -lt $endIndex; $i++) {
     $line = [string]$Lines[$i]
     $trimmed = $line.Trim()
     $numericValue = 0
     if ([int]::TryParse($trimmed, [ref]$numericValue)) {
-      throw "Unexpected language marker before index ${EndIndex}: $trimmed"
+      throw "Unexpected language marker before index ${endIndex}: $trimmed"
+    }
+
+    if ($currentId -eq $TargetId) {
+      $Lines[$i] = $Text
+      return
     }
 
     $currentId++
   }
 
-  return $currentId
+  while ($currentId -lt $TargetId) {
+    $Lines.Insert($endIndex, '')
+    $endIndex++
+    $currentId++
+  }
+
+  $Lines.Insert($endIndex, $Text)
 }
 
 function Update-LangFile {
@@ -94,47 +140,17 @@ function Update-LangFile {
     [void]$list.Add($line)
   }
 
-  if (-not $list.Contains('104')) {
-    $index401 = Find-LineIndex -Lines $list -Marker '401'
-    $list.Insert($index401, '104')
-    $list.Insert($index401 + 1, $CopyText)
-  }
+  Set-ExplicitLangIdText -Lines $list -Marker '104' -Text $CopyText -InsertBeforeMarker '401'
+  Set-LangIdTextInBlock -Lines $list -StartMarker '2500' -StartId 2500 -TargetId 2509 -Text $SettingsText
 
-  if (-not $list.Contains($SettingsText)) {
-    $index2500 = Find-LineIndex -Lines $list -Marker '2500'
-    $index2900 = Find-NextNumericMarkerIndex -Lines $list -StartIndex $index2500
-    $nextId = Get-NextLangIdBeforeIndex -Lines $list -StartId 2500 -StartIndex $index2500 -EndIndex $index2900
-    while ($nextId -lt 2509) {
-      $list.Insert($index2900, '')
-      $index2900++
-      $nextId++
-    }
-    if ($nextId -ne 2509) {
-      throw "Unexpected settings insertion id in ${LangPath}: $nextId"
-    }
-    $list.Insert($index2900, $SettingsText)
+  if ($list.Contains('3433')) {
+    Set-ExplicitLangIdText -Lines $list -Marker '3433' -Text $ExtractText -InsertBeforeMarker '3500'
   }
-
-  if (-not $list.Contains($ExtractText)) {
-    if ($list.Contains('3430')) {
-      $index3430 = Find-LineIndex -Lines $list -Marker '3430'
-      $index3440 = Find-NextNumericMarkerIndex -Lines $list -StartIndex $index3430
-      $nextId = Get-NextLangIdBeforeIndex -Lines $list -StartId 3430 -StartIndex $index3430 -EndIndex $index3440
-      while ($nextId -lt 3433) {
-        $list.Insert($index3440, '')
-        $index3440++
-        $nextId++
-      }
-      if ($nextId -ne 3433) {
-        throw "Unexpected extract insertion id in ${LangPath}: $nextId"
-      }
-      $list.Insert($index3440, $ExtractText)
-    }
-    else {
-      $index3500 = Find-LineIndex -Lines $list -Marker '3500'
-      $list.Insert($index3500, '3433')
-      $list.Insert($index3500 + 1, $ExtractText)
-    }
+  elseif ($list.Contains('3430')) {
+    Set-LangIdTextInBlock -Lines $list -StartMarker '3430' -StartId 3430 -TargetId 3433 -Text $ExtractText
+  }
+  else {
+    Set-ExplicitLangIdText -Lines $list -Marker '3433' -Text $ExtractText -InsertBeforeMarker '3500'
   }
 
   $updated = $list.ToArray() -join "`n"
