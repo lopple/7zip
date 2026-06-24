@@ -2,9 +2,9 @@
 #include "../../GuiCommon.rc"
 
 #define xc 320
-#define yc 144
+#define yc 164
 
-#define y 40
+#define y 60
 
 IDD_COPY  DIALOG  0, 0, xs, ys  MY_MODAL_RESIZE_DIALOG_STYLE  MY_FONT
 CAPTION "Copy"
@@ -12,6 +12,8 @@ CAPTION "Copy"
   LTEXT       "",    IDT_COPY, m, m, xc, 8
   COMBOBOX           IDC_COPY, m, 20, xc - bxsDots - m, 65, MY_COMBO_WITH_EDIT
   PUSHBUTTON  "...", IDB_COPY_SET_PATH, xs - m - bxsDots, 18, bxsDots, bys, WS_GROUP
+  CONTROL     "",    IDX_COPY_NAME_ENABLE, MY_CHECKBOX, m, 42, 12, 10
+  EDITTEXT           IDE_COPY_NAME, m + 14, 40, xc - 14, 14, ES_AUTOHSCROLL
   LTEXT       "",    IDT_COPY_INFO, m, y, xc, by - y - 1, SS_NOPREFIX | SS_LEFTNOWORDWRAP
   CONTROL     "Open destination folder after copy/extract", IDX_COPY_OPEN_DEST_FOLDER, MY_CHECKBOX,
               m, by - 18, xc, 10

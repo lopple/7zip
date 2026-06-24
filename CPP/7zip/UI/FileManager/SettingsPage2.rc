@@ -14,7 +14,7 @@ BEGIN
   MY_CONTROL_CHECKBOX ( "&Single-click to open an item", IDX_SETTINGS_SINGLE_CLICK, m, 64, xc)
   MY_CONTROL_CHECKBOX ( "&Alternative selection mode", IDX_SETTINGS_ALTERNATIVE_SELECTION, m, 78, xc)
 
-  MY_CONTROL_CHECKBOX ( "Default extract/copy destination to archive-name folder",
+  MY_CONTROL_CHECKBOX ( "Use archive-name folder as initial output folder",
                                          IDX_SETTINGS_EXTRACT_TO_ARC_NAME,   m,  96, xc)
 
   MY_CONTROL_CHECKBOX ( "Show system &menu",     IDX_SETTINGS_SHOW_SYSTEM_MENU,     m, 112, xc)

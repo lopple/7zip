@@ -626,6 +626,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
   UString destPath;
   bool openDestFolder = false;
   bool finalDestIsFsPath = false;
+  bool splitDestEnabled = false;
   bool useDestPanel = false;
 
   {
@@ -648,11 +649,11 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
       destPath = destPanel.GetFsPath();
       if (NumPanels == 1)
         Reduce_Path_To_RealFileSystemPath(destPath);
-      if (NExtract::Read_DefaultToArcNameFolder())
+      UString archiveNameFolder;
+      splitDestEnabled = GetArchiveNameFolder(srcPanel, archiveNameFolder);
+      if (splitDestEnabled && NExtract::Read_DefaultToArcNameFolder())
       {
-        UString archiveNameFolder;
-        if (GetArchiveNameFolder(srcPanel, archiveNameFolder))
-          destPath = archiveNameFolder;
+        destPath = archiveNameFolder;
       }
     }
   }
@@ -667,6 +668,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
 
     copyDialog.Strings = copyFolders;
     copyDialog.Value = destPath;
+    copyDialog.SplitDestEnabled = splitDestEnabled;
     LangString(move ? IDS_MOVE : IDS_COPY, copyDialog.Title);
     LangString(move ? IDS_MOVE_TO : IDS_COPY_TO, copyDialog.Static);
     copyDialog.Info = srcPanel.GetItemsInfoString(indices);

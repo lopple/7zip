@@ -5,5 +5,7 @@
 #define IDB_COPY_SET_PATH  102
 #define IDT_COPY_INFO      103
 #define IDX_COPY_OPEN_DEST_FOLDER 104
+#define IDX_COPY_NAME_ENABLE      105
+#define IDE_COPY_NAME             106
 
 #define IDS_SET_FOLDER    6007

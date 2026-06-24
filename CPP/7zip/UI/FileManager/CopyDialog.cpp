@@ -2,6 +2,8 @@
 
 #include "StdAfx.h"
 
+#include "../../../Common/Wildcard.h"
+
 #include "../../../Windows/FileName.h"
 
 #include "../../../Windows/Control/Static.h"
@@ -29,9 +31,11 @@ bool CCopyDialog::OnInit()
   LangSetDlgItems(*this, kLangIDs, Z7_ARRAY_SIZE(kLangIDs));
   #endif
   #ifndef Z7_NO_REGISTRY
-  OpenDestFolder = NExtract::Read_OpenDestFolder();
+  _info.Load();
+  OpenDestFolder = _info.OpenDestFolder.Val;
   #endif
   _path.Attach(GetItem(IDC_COPY));
+  _pathName.Attach(GetItem(IDE_COPY_NAME));
   SetText(Title);
 
   NControl::CStatic staticContol;
@@ -43,7 +47,27 @@ bool CCopyDialog::OnInit()
   #endif
   FOR_VECTOR (i, Strings)
     _path.AddString(Strings[i]);
-  _path.SetText(Value);
+  UString pathValue = Value;
+  bool splitDest = false;
+  #ifndef Z7_NO_REGISTRY
+  splitDest = SplitDestEnabled && _info.SplitDest.Val;
+  #else
+  splitDest = SplitDestEnabled;
+  #endif
+  ShowItem_Bool(IDX_COPY_NAME_ENABLE, SplitDestEnabled);
+  if (splitDest)
+  {
+    CheckButton(IDX_COPY_NAME_ENABLE, true);
+    UString pathName;
+    SplitPathToParts_Smart(Value, pathValue, pathName);
+    if (pathValue.IsEmpty())
+      pathValue = pathName;
+    else
+      _pathName.SetText(pathName);
+  }
+  UpdatePathNameVisibility();
+
+  _path.SetText(pathValue);
   CheckButton(IDX_COPY_OPEN_DEST_FOLDER, OpenDestFolder);
   SetItemText(IDT_COPY_INFO, Info);
   NormalizeSize(true);
@@ -70,12 +94,15 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
     ChangeSubWindowSizeX(_path, xSize - mx - mx - bx - mx);
   }
 
+  if (SplitDestEnabled)
+    ChangeSubWindowSizeX(_pathName, xSize - mx * 2 - 14);
+
   {
     RECT r;
     GetClientRectOfItem(IDT_COPY_INFO, r);
     NControl::CStatic staticContol;
     staticContol.Attach(GetItem(IDT_COPY_INFO));
-    const int yPos = r.top;
+    const int yPos = SplitDestEnabled ? r.top : 40;
     const int checkY = y - my - 10;
     staticContol.Move(mx, yPos, xSize - mx * 2, checkY - 2 - yPos);
     MoveItem(IDX_COPY_OPEN_DEST_FOLDER, mx, checkY, xSize - mx * 2, 10);
@@ -94,8 +121,16 @@ bool CCopyDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
     case IDB_COPY_SET_PATH:
       OnButtonSetPath();
       return true;
+    case IDX_COPY_NAME_ENABLE:
+      UpdatePathNameVisibility();
+      return true;
   }
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
+}
+
+void CCopyDialog::UpdatePathNameVisibility()
+{
+  ShowItem_Bool(IDE_COPY_NAME, SplitDestEnabled && IsButtonCheckedBool(IDX_COPY_NAME_ENABLE));
 }
 
 void CCopyDialog::OnButtonSetPath()
@@ -115,10 +150,35 @@ void CCopyDialog::OnButtonSetPath()
 
 void CCopyDialog::OnOK()
 {
-  _path.GetText(Value);
+  UString value;
+  _path.GetText(value);
+
+  const bool splitDest = SplitDestEnabled && IsButtonCheckedBool(IDX_COPY_NAME_ENABLE);
+  if (splitDest)
+  {
+    value.Trim();
+    NFile::NName::NormalizeDirPathPrefix(value);
+    UString pathName;
+    _pathName.GetText(pathName);
+    pathName.Trim();
+    value += pathName;
+    NFile::NName::NormalizeDirPathPrefix(value);
+  }
+  Value = value;
+
   OpenDestFolder = IsButtonCheckedBool(IDX_COPY_OPEN_DEST_FOLDER);
   #ifndef Z7_NO_REGISTRY
-  NExtract::Save_OpenDestFolder(OpenDestFolder);
+  if (OpenDestFolder != _info.OpenDestFolder.Val)
+  {
+    _info.OpenDestFolder.Def = true;
+    _info.OpenDestFolder.Val = OpenDestFolder;
+  }
+  if (SplitDestEnabled && splitDest != _info.SplitDest.Val)
+  {
+    _info.SplitDest.Def = true;
+    _info.SplitDest.Val = splitDest;
+  }
+  _info.Save();
   #endif
   CModalDialog::OnOK();
 }
