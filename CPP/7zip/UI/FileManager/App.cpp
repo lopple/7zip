@@ -651,9 +651,12 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
         Reduce_Path_To_RealFileSystemPath(destPath);
       UString archiveNameFolder;
       splitDestEnabled = GetArchiveNameFolder(srcPanel, archiveNameFolder);
-      if (splitDestEnabled && NExtract::Read_DefaultToArcNameFolder())
+      if (splitDestEnabled)
       {
-        destPath = archiveNameFolder;
+        NExtract::CInfo extractInfo;
+        extractInfo.Load();
+        if (extractInfo.SplitDest.Val)
+          destPath = archiveNameFolder;
       }
     }
   }

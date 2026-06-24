@@ -46,8 +46,6 @@ namespace NExtract
   bool Read_ShowPassword();
   void Save_OpenDestFolder(bool openDestFolder);
   bool Read_OpenDestFolder();
-  void Save_DefaultToArcNameFolder(bool defaultToArcNameFolder);
-  bool Read_DefaultToArcNameFolder();
 
   void Save_LimitGB(UInt32 limit_GB);
   UInt32 Read_LimitGB();

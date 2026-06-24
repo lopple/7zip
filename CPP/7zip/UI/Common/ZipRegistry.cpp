@@ -97,7 +97,6 @@ static LPCTSTR const kPathHistory = TEXT("PathHistory");
 static LPCTSTR const kSplitDest = TEXT("SplitDest");
 static LPCTSTR const kElimDup = TEXT("ElimDup");
 static LPCTSTR const kOpenDestFolder = TEXT("OpenDestFolder");
-static LPCTSTR const kDefaultToArcNameFolder = TEXT("DefaultToArcNameFolder");
 // static LPCTSTR const kAltStreams = TEXT("AltStreams");
 static LPCTSTR const kNtSecur = TEXT("Security");
 static LPCTSTR const kMemLimit = TEXT("MemLimit");
@@ -138,14 +137,6 @@ void Save_OpenDestFolder(bool openDestFolder)
   CKey key;
   CreateMainKey(key, kKeyName);
   key.SetValue(kOpenDestFolder, openDestFolder);
-}
-
-void Save_DefaultToArcNameFolder(bool defaultToArcNameFolder)
-{
-  CS_LOCK
-  CKey key;
-  CreateMainKey(key, kKeyName);
-  key.SetValue(kDefaultToArcNameFolder, defaultToArcNameFolder);
 }
 
 void Save_LimitGB(UInt32 limit_GB)
@@ -214,17 +205,6 @@ bool Read_OpenDestFolder()
     return openDestFolder;
   key.GetValue_bool_IfOk(kOpenDestFolder, openDestFolder);
   return openDestFolder;
-}
-
-bool Read_DefaultToArcNameFolder()
-{
-  CS_LOCK
-  CKey key;
-  bool defaultToArcNameFolder = false;
-  if (OpenMainKey(key, kKeyName) != ERROR_SUCCESS)
-    return defaultToArcNameFolder;
-  key.GetValue_bool_IfOk(kDefaultToArcNameFolder, defaultToArcNameFolder);
-  return defaultToArcNameFolder;
 }
 
 UInt32 Read_LimitGB()

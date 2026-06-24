@@ -116,14 +116,45 @@ function Set-LangIdTextInBlock {
   $Lines.Insert($endIndex, $Text)
 }
 
+function Clear-LangIdTextInBlock {
+  param(
+    [Parameter(Mandatory=$true)]
+    $Lines,
+    [Parameter(Mandatory=$true)]
+    [string]$StartMarker,
+    [Parameter(Mandatory=$true)]
+    [int]$StartId,
+    [Parameter(Mandatory=$true)]
+    [int]$TargetId
+  )
+
+  $startIndex = Find-LineIndex -Lines $Lines -Marker $StartMarker
+  $endIndex = Find-NextNumericMarkerIndex -Lines $Lines -StartIndex $startIndex
+  $currentId = $StartId
+
+  for ($i = $startIndex + 1; $i -lt $endIndex; $i++) {
+    $line = [string]$Lines[$i]
+    $trimmed = $line.Trim()
+    $numericValue = 0
+    if ([int]::TryParse($trimmed, [ref]$numericValue)) {
+      throw "Unexpected language marker before index ${endIndex}: $trimmed"
+    }
+
+    if ($currentId -eq $TargetId) {
+      $Lines[$i] = ''
+      return
+    }
+
+    $currentId++
+  }
+}
+
 function Update-LangFile {
   param(
     [Parameter(Mandatory=$true)]
     [string]$LangPath,
     [Parameter(Mandatory=$true)]
     [string]$CopyText,
-    [Parameter(Mandatory=$true)]
-    [string]$SettingsText,
     [Parameter(Mandatory=$true)]
     [string]$ExtractText
   )
@@ -141,7 +172,7 @@ function Update-LangFile {
   }
 
   Set-ExplicitLangIdText -Lines $list -Marker '104' -Text $CopyText -InsertBeforeMarker '401'
-  Set-LangIdTextInBlock -Lines $list -StartMarker '2500' -StartId 2500 -TargetId 2509 -Text $SettingsText
+  Clear-LangIdTextInBlock -Lines $list -StartMarker '2500' -StartId 2500 -TargetId 2509
 
   if ($list.Contains('3433')) {
     Set-ExplicitLangIdText -Lines $list -Marker '3433' -Text $ExtractText -InsertBeforeMarker '3500'
@@ -219,14 +250,12 @@ function Read-Translations {
   foreach ($record in $records) {
     if ([string]::IsNullOrEmpty($record.file) -or
         [string]::IsNullOrEmpty($record.copy) -or
-        [string]::IsNullOrEmpty($record.settings) -or
         [string]::IsNullOrEmpty($record.extract)) {
       throw "Invalid translation record in $($resolved.Path)"
     }
     $map[[string]$record.file] = [PSCustomObject]@{
       FileName = [string]$record.file
       CopyText = [string]$record.copy
-      SettingsText = [string]$record.settings
       ExtractText = [string]$record.extract
     }
   }
@@ -317,7 +346,7 @@ foreach ($translation in $translations.Values) {
   $langFile = Join-Path $payloadLang $translation.FileName
   if (Test-Path -LiteralPath $langFile) {
     Write-Host "Patch language file: $($translation.FileName)"
-    Update-LangFile -LangPath $langFile -CopyText $translation.CopyText -SettingsText $translation.SettingsText -ExtractText $translation.ExtractText
+    Update-LangFile -LangPath $langFile -CopyText $translation.CopyText -ExtractText $translation.ExtractText
   }
 }
 
