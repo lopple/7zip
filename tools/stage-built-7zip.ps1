@@ -262,6 +262,27 @@ function Read-Translations {
   return $map
 }
 
+function Get-GitOutput {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory=$true)]
+    [string[]]$GitArgs
+  )
+
+  $argsList = @('-C', $RepoRoot)
+  $argsList += $GitArgs
+  try {
+    $output = & git @argsList 2>$null
+    if ($LASTEXITCODE -eq 0) {
+      return (($output -join "`n").Trim())
+    }
+  }
+  catch {
+  }
+  return ''
+}
+
 $scriptDir = Split-Path -Parent $PSCommandPath
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $scriptDir '..')
 if ([string]::IsNullOrEmpty($TranslationsPath)) {
@@ -296,6 +317,9 @@ $payloadRoot = Join-Path $stageRootFull '7-Zip'
 $payloadLang = Join-Path $payloadRoot 'Lang'
 New-Item -ItemType Directory -Path $payloadLang -Force | Out-Null
 
+$stageDoc = Join-Path $stageRootFull 'DOC'
+New-Item -ItemType Directory -Path $stageDoc -Force | Out-Null
+
 $binaries = @(
   [PSCustomObject]@{
     Name = '7-zip.dll'
@@ -317,6 +341,20 @@ $binaries = @(
 foreach ($binary in $binaries) {
   Write-Host "Stage binary: $($binary.Name)"
   Copy-RequiredFile -Source $binary.Source -Destination $binary.Destination
+}
+
+$docFiles = @(
+  'License.txt',
+  'copying.txt',
+  'unRarLicense.txt',
+  'readme.txt'
+)
+
+foreach ($docFile in $docFiles) {
+  Write-Host "Stage doc: $docFile"
+  $sourceDoc = Join-Path $repoRoot.Path (Join-Path 'DOC' $docFile)
+  $destDoc = Join-Path $stageDoc $docFile
+  Copy-RequiredFile -Source $sourceDoc -Destination $destDoc
 }
 
 $sourceLangResolved = Resolve-Path -LiteralPath $SourceLangRoot
@@ -541,7 +579,7 @@ exit /b %EXIT_CODE%
 '@
 
 $readme = @'
-7-Zip custom staging package
+7-Zip unofficial custom staging package
 
 Double-click Install-7Zip-Custom.cmd to install this staged build.
 
@@ -550,6 +588,10 @@ Payload:
   7-Zip\7zG.exe
   7-Zip\7zFM.exe
   7-Zip\Lang\*.txt
+  DOC\License.txt
+  DOC\copying.txt
+  DOC\unRarLicense.txt
+  DOC\readme.txt
 
 The installer backs up overwritten files under:
   C:\Program Files\7-Zip\backup-custom-YYYYMMDD-HHMMSS
@@ -566,6 +608,8 @@ $manifestPath = Join-Path $stageRootFull 'manifest.txt'
 $manifestLines = New-Object 'System.Collections.Generic.List[string]'
 [void]$manifestLines.Add('7-Zip custom staging manifest')
 [void]$manifestLines.Add(('Generated: ' + (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')))
+[void]$manifestLines.Add(('SourceBranch: ' + (Get-GitOutput -RepoRoot $repoRoot.Path -GitArgs @('rev-parse', '--abbrev-ref', 'HEAD'))))
+[void]$manifestLines.Add(('SourceCommit: ' + (Get-GitOutput -RepoRoot $repoRoot.Path -GitArgs @('rev-parse', 'HEAD'))))
 [void]$manifestLines.Add(('StageRoot: ' + $stageRootFull))
 [void]$manifestLines.Add('')
 [void]$manifestLines.Add('Payload hashes:')
