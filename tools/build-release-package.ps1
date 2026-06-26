@@ -74,7 +74,7 @@ function Find-VcVars64 {
       $formattedArgs = ($vswhereArgs | ForEach-Object { '[' + $_ + ']' }) -join ' '
       Write-Host "argv: [$vswhere] $formattedArgs"
       $installPath = (& $vswhere @vswhereArgs | Select-Object -First 1)
-      if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($installPath)) {
+      if (-not [string]::IsNullOrEmpty($installPath)) {
         [void]$candidates.Add((Join-Path $installPath 'VC\Auxiliary\Build\vcvars64.bat'))
       }
     }
