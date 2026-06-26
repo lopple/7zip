@@ -1,0 +1,114 @@
+name: Windows release package
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag/release name, for example 7zip-26.01-lopple.2'
+        required: true
+        default: '7zip-26.01-lopple.2'
+      create_release:
+        description: 'Create a GitHub Release from the package built in this workflow'
+        required: true
+        type: boolean
+        default: false
+      draft:
+        description: 'Create the GitHub Release as a draft'
+        required: true
+        type: boolean
+        default: true
+      prerelease:
+        description: 'Mark the GitHub Release as a prerelease'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Windows x64 package
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build release package
+        shell: pwsh
+        run: |
+          ./tools/build-release-package.ps1 -ReleaseName '${{ inputs.release_tag }}'
+
+      - name: Upload release package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-package
+          path: |
+            build/release/${{ inputs.release_tag }}-windows-x64-custom.zip
+            build/release/${{ inputs.release_tag }}-windows-x64-custom.zip.sha256
+            build/release/${{ inputs.release_tag }}-release-notes.md
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    runs-on: windows-2022
+    needs: build
+    if: ${{ inputs.create_release }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download built release package
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release-package
+          path: release-assets
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TITLE: ${{ inputs.release_tag }}
+          RELEASE_DRAFT: ${{ inputs.draft }}
+          RELEASE_PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          $existingRelease = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            throw "Release already exists: $env:RELEASE_TAG"
+          }
+          $existingTag = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:RELEASE_TAG" 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            throw "Tag already exists: $env:RELEASE_TAG"
+          }
+
+          $zipPath = Join-Path 'release-assets' ($env:RELEASE_TAG + '-windows-x64-custom.zip')
+          $shaPath = $zipPath + '.sha256'
+          $notesPath = Join-Path 'release-assets' ($env:RELEASE_TAG + '-release-notes.md')
+
+          $argsList = @(
+            'release',
+            'create',
+            $env:RELEASE_TAG,
+            $zipPath,
+            $shaPath,
+            '--repo',
+            $env:GITHUB_REPOSITORY,
+            '--target',
+            $env:GITHUB_SHA,
+            '--title',
+            $env:RELEASE_TITLE,
+            '--notes-file',
+            $notesPath
+          )
+          if ($env:RELEASE_DRAFT -eq 'true') {
+            $argsList += '--draft'
+          }
+          if ($env:RELEASE_PRERELEASE -eq 'true') {
+            $argsList += '--prerelease'
+          }
+
+          $formattedArgs = ($argsList | ForEach-Object { '[' + $_ + ']' }) -join ' '
+          Write-Host "argv: [gh] $formattedArgs"
+          gh @argsList
