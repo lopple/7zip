@@ -7,6 +7,7 @@
 #include "../../../../C/Sort.h"
 
 #include "../../../Common/ComTry.h"
+#include "../../../Common/Wildcard.h"
 
 #include "../../../Windows/FileDir.h"
 #include "../../../Windows/FileName.h"
@@ -1504,6 +1505,63 @@ Z7_COM7F_IMF(CAgentFolder::Extract(const UInt32 *indices,
     }
   }
 
+  CUIntVector realIndices;
+  GetRealIndices(indices, numItems, IntToBool(includeAltStreams),
+      false, // includeFolderSubItemsInFlatMode
+      realIndices); //
+
+  UStringVector removePathParts = pathParts;
+  bool elimPrefixMode = false;
+  if (_elimDup && !testMode && pathMode != NExtract::NPathMode::kAbsPaths)
+  {
+    UString dirPrefix;
+    UString elimPrefix;
+    SplitPathToParts_Smart(fs2us(pathU), dirPrefix, elimPrefix);
+    if (!elimPrefix.IsEmpty())
+    {
+      if (IsPathSepar(elimPrefix.Back()))
+        elimPrefix.DeleteBack();
+      if (!elimPrefix.IsEmpty())
+      {
+        UStringVector elimPathParts = pathParts;
+        elimPathParts.Add(elimPrefix);
+
+        bool elimIsPossible = true;
+        CReadArcItem item;
+        FOR_VECTOR (i, realIndices)
+        {
+          RINOK(_agentSpec->GetArc().GetItem(realIndices[i], item))
+          if (item.PathParts.Size() < elimPathParts.Size())
+          {
+            elimIsPossible = false;
+            break;
+          }
+          if (item.PathParts.Size() == elimPathParts.Size() && !item.MainIsDir)
+          {
+            elimIsPossible = false;
+            break;
+          }
+          FOR_VECTOR (j, elimPathParts)
+          {
+            if (CompareFileNames(elimPathParts[j], item.PathParts[j]) != 0)
+            {
+              elimIsPossible = false;
+              break;
+            }
+          }
+          if (!elimIsPossible)
+            break;
+        }
+
+        if (elimIsPossible)
+        {
+          removePathParts = elimPathParts;
+          elimPrefixMode = true;
+        }
+      }
+    }
+  }
+
   CExtractNtOptions extractNtOptions;
   extractNtOptions.AltStreams.Val = IntToBool(includeAltStreams); // change it!!!
   extractNtOptions.AltStreams.Def = true;
@@ -1528,19 +1586,15 @@ Z7_COM7F_IMF(CAgentFolder::Extract(const UInt32 *indices,
       false, // stdOutMode
       IntToBool(testMode),
       pathU,
-      pathParts, isAltStreamFolder,
+      removePathParts, isAltStreamFolder,
       (UInt64)(Int64)-1);
+  extractCallbackSpec->Is_elimPrefix_Mode = elimPrefixMode;
   
-  if (_proxy2)
+  if (_proxy2 && !elimPrefixMode)
     extractCallbackSpec->SetBaseParentFolderIndex((unsigned)_proxy2->Dirs[_proxyDirIndex].ArcIndex);
 
   // do we need another base folder for subfolders ?
   extractCallbackSpec->DirPathPrefix_for_HashFiles = _agentSpec->_hashBaseFolderPrefix;
-
-  CUIntVector realIndices;
-  GetRealIndices(indices, numItems, IntToBool(includeAltStreams),
-      false, // includeFolderSubItemsInFlatMode
-      realIndices); //
 
   #ifdef SUPPORT_LINKS
 

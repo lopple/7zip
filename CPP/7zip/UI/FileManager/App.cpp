@@ -625,6 +625,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
   CRecordVector<UInt32> indices;
   UString destPath;
   bool openDestFolder = false;
+  bool elimDup = false;
   bool finalDestIsFsPath = false;
   bool splitDestEnabled = false;
   bool useDestPanel = false;
@@ -672,6 +673,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
     copyDialog.Strings = copyFolders;
     copyDialog.Value = destPath;
     copyDialog.SplitDestEnabled = splitDestEnabled;
+    copyDialog.ElimDupEnabled = splitDestEnabled;
     LangString(move ? IDS_MOVE : IDS_COPY, copyDialog.Title);
     LangString(move ? IDS_MOVE_TO : IDS_COPY_TO, copyDialog.Static);
     copyDialog.Info = srcPanel.GetItemsInfoString(indices);
@@ -681,6 +683,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
 
     destPath = copyDialog.Value;
     openDestFolder = copyDialog.OpenDestFolder;
+    elimDup = copyDialog.ElimDup;
   }
 
   {
@@ -853,6 +856,7 @@ void CApp::OnCopy(bool move, bool copyToSame, unsigned srcPanelIndex)
     options.moveMode = move;
     options.includeAltStreams = true;
     options.replaceAltStreamChars = false;
+    options.elimDup = splitDestEnabled && elimDup;
     options.showErrorMessages = true;
 
     result = srcPanel.CopyTo(options, indices, NULL);

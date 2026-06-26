@@ -108,6 +108,11 @@ Z7_IFACE_CONSTR_FOLDERARC(IFolderSetZoneIdMode, 0x12)
 
 Z7_IFACE_CONSTR_FOLDERARC(IFolderSetZoneIdFile, 0x13)
 
+#define Z7_IFACEM_IFolderSetElimDupMode(x) \
+  x(SetElimDupMode(Int32 elimDupMode)) \
+
+Z7_IFACE_CONSTR_FOLDERARC(IFolderSetElimDupMode, 0x15)
+
 
 // if the caller calls Before_ArcReopen(), the callee must
 // clear user break status, because the caller want to open archive still.

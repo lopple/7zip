@@ -61,6 +61,7 @@ class CAgentFolder Z7_final:
   public IInArchiveGetStream,
   public IFolderSetZoneIdMode,
   public IFolderSetZoneIdFile,
+  public IFolderSetElimDupMode,
   public IFolderOperations,
   public IFolderSetFlatMode,
   public CMyUnknownImp
@@ -77,6 +78,7 @@ class CAgentFolder Z7_final:
     Z7_COM_QI_ENTRY(IInArchiveGetStream)
     Z7_COM_QI_ENTRY(IFolderSetZoneIdMode)
     Z7_COM_QI_ENTRY(IFolderSetZoneIdFile)
+    Z7_COM_QI_ENTRY(IFolderSetElimDupMode)
     Z7_COM_QI_ENTRY(IFolderOperations)
     Z7_COM_QI_ENTRY(IFolderSetFlatMode)
   Z7_COM_QI_END
@@ -94,6 +96,7 @@ class CAgentFolder Z7_final:
   Z7_IFACE_COM7_IMP(IInArchiveGetStream)
   Z7_IFACE_COM7_IMP(IFolderSetZoneIdMode)
   Z7_IFACE_COM7_IMP(IFolderSetZoneIdFile)
+  Z7_IFACE_COM7_IMP(IFolderSetElimDupMode)
   Z7_IFACE_COM7_IMP(IFolderOperations)
   Z7_IFACE_COM7_IMP(IFolderSetFlatMode)
 
@@ -111,6 +114,7 @@ public:
   CAgentFolder():
       _isAltStreamFolder(false),
       _flatMode(false),
+      _elimDup(false),
       _loadAltStreams(false), // _loadAltStreams alt streams works in flat mode, but we don't use it now
       _proxyDirIndex(0),
       _zoneMode(NExtract::NZoneIdMode::kNone)
@@ -150,6 +154,7 @@ public:
 public:
   bool _isAltStreamFolder;
   bool _flatMode;
+  bool _elimDup;
   bool _loadAltStreams; // in Flat mode
   const CProxyArc *_proxy;
   const CProxyArc2 *_proxy2;

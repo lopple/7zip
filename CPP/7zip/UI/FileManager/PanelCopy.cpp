@@ -91,6 +91,14 @@ HRESULT CPanelCopyThread::ProcessVirt()
         RINOK(setZoneFile->SetZoneIdFile(options->ZoneBuf, (UInt32)options->ZoneBuf.Size()))
       }
     }
+    {
+      CMyComPtr<IFolderSetElimDupMode> setElimDupMode;
+      FolderOperations.QueryInterface(IID_IFolderSetElimDupMode, &setElimDupMode);
+      if (setElimDupMode)
+      {
+        RINOK(setElimDupMode->SetElimDupMode(BoolToInt(options->elimDup)))
+      }
+    }
   }
 
   if (CopyFrom_Paths)

@@ -1,4 +1,5 @@
 #include "CopyDialogRes.h"
+#include "../GUI/ExtractDialogRes.h"
 #include "../../GuiCommon.rc"
 
 #define xc 320
@@ -14,7 +15,9 @@ CAPTION "Copy"
   PUSHBUTTON  "...", IDB_COPY_SET_PATH, xs - m - bxsDots, 18, bxsDots, bys, WS_GROUP
   CONTROL     "",    IDX_COPY_NAME_ENABLE, MY_CHECKBOX, m, 42, 12, 10
   EDITTEXT           IDE_COPY_NAME, m + 14, 40, xc - 14, 14, ES_AUTOHSCROLL
-  LTEXT       "",    IDT_COPY_INFO, m, y, xc, by - y - 1, SS_NOPREFIX | SS_LEFTNOWORDWRAP
+  LTEXT       "",    IDT_COPY_INFO, m, y, xc, by - y - 34, SS_NOPREFIX | SS_LEFTNOWORDWRAP
+  CONTROL     "Eliminate duplication of root folder", IDX_EXTRACT_ELIM_DUP, MY_CHECKBOX,
+              m, by - 32, xc, 10
   CONTROL     "Open destination folder after copy/extract", IDX_COPY_OPEN_DEST_FOLDER, MY_CHECKBOX,
               m, by - 18, xc, 10
   OK_CANCEL

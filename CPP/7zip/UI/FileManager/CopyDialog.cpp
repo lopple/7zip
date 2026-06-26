@@ -12,6 +12,8 @@
 #include "../Common/ZipRegistry.h"
 #endif
 
+#include "../GUI/ExtractDialogRes.h"
+
 #include "BrowseDialog.h"
 #include "CopyDialog.h"
 #include "LangUtils.h"
@@ -21,6 +23,7 @@ using namespace NWindows;
 #ifdef Z7_LANG
 static const UInt32 kLangIDs[] =
 {
+  IDX_EXTRACT_ELIM_DUP,
   IDX_COPY_OPEN_DEST_FOLDER
 };
 #endif
@@ -33,6 +36,8 @@ bool CCopyDialog::OnInit()
   #ifndef Z7_NO_REGISTRY
   _info.Load();
   OpenDestFolder = _info.OpenDestFolder.Val;
+  if (_info.ElimDup.Def)
+    ElimDup = _info.ElimDup.Val;
   #endif
   _path.Attach(GetItem(IDC_COPY));
   _pathName.Attach(GetItem(IDE_COPY_NAME));
@@ -68,6 +73,8 @@ bool CCopyDialog::OnInit()
   UpdatePathNameVisibility();
 
   _path.SetText(pathValue);
+  ShowItem_Bool(IDX_EXTRACT_ELIM_DUP, ElimDupEnabled);
+  CheckButton(IDX_EXTRACT_ELIM_DUP, ElimDup);
   CheckButton(IDX_COPY_OPEN_DEST_FOLDER, OpenDestFolder);
   SetItemText(IDT_COPY_INFO, Info);
   NormalizeSize(true);
@@ -103,9 +110,11 @@ bool CCopyDialog::OnSize(WPARAM /* wParam */, int xSize, int ySize)
     NControl::CStatic staticContol;
     staticContol.Attach(GetItem(IDT_COPY_INFO));
     const int yPos = SplitDestEnabled ? r.top : 40;
-    const int checkY = y - my - 10;
-    staticContol.Move(mx, yPos, xSize - mx * 2, checkY - 2 - yPos);
-    MoveItem(IDX_COPY_OPEN_DEST_FOLDER, mx, checkY, xSize - mx * 2, 10);
+    const int openY = y - my - 10;
+    const int elimDupY = ElimDupEnabled ? openY - 14 : openY;
+    staticContol.Move(mx, yPos, xSize - mx * 2, elimDupY - 2 - yPos);
+    MoveItem(IDX_EXTRACT_ELIM_DUP, mx, elimDupY, xSize - mx * 2, 10);
+    MoveItem(IDX_COPY_OPEN_DEST_FOLDER, mx, openY, xSize - mx * 2, 10);
   }
 
   MoveItem(IDCANCEL, x, y, bx1, by);
@@ -167,7 +176,17 @@ void CCopyDialog::OnOK()
   Value = value;
 
   OpenDestFolder = IsButtonCheckedBool(IDX_COPY_OPEN_DEST_FOLDER);
+  ElimDup = ElimDupEnabled && IsButtonCheckedBool(IDX_EXTRACT_ELIM_DUP);
   #ifndef Z7_NO_REGISTRY
+  if (ElimDupEnabled)
+  {
+    const bool oldElimDup = _info.ElimDup.Def ? _info.ElimDup.Val : true;
+    if (ElimDup != oldElimDup)
+    {
+      _info.ElimDup.Def = true;
+      _info.ElimDup.Val = ElimDup;
+    }
+  }
   if (OpenDestFolder != _info.OpenDestFolder.Val)
   {
     _info.OpenDestFolder.Def = true;

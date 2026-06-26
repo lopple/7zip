@@ -35,10 +35,12 @@ public:
   UString Info;
   UStringVector Strings;
   bool OpenDestFolder;
+  bool ElimDup;
+  bool ElimDupEnabled;
   bool SplitDestEnabled;
 
   INT_PTR Create(HWND parentWindow = NULL) { return CModalDialog::Create(IDD_COPY, parentWindow); }
-  CCopyDialog(): OpenDestFolder(false), SplitDestEnabled(false) {}
+  CCopyDialog(): OpenDestFolder(false), ElimDup(true), ElimDupEnabled(false), SplitDestEnabled(false) {}
 };
 
 #endif

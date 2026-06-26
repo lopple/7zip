@@ -269,6 +269,7 @@ struct CCopyToOptions
   bool streamMode;
   bool moveMode;
   bool testMode;
+  bool elimDup;
   bool includeAltStreams;
   bool replaceAltStreamChars;
   bool showErrorMessages;
@@ -288,6 +289,7 @@ struct CCopyToOptions
       streamMode(false),
       moveMode(false),
       testMode(false),
+      elimDup(false),
       includeAltStreams(true),
       replaceAltStreamChars(false),
       showErrorMessages(false),

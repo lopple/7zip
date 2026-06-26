@@ -28,6 +28,12 @@ Z7_COM7F_IMF(CAgentFolder::SetZoneIdFile(const Byte *data, UInt32 size))
   return S_OK;
 }
 
+Z7_COM7F_IMF(CAgentFolder::SetElimDupMode(Int32 elimDupMode))
+{
+  _elimDup = IntToBool(elimDupMode);
+  return S_OK;
+}
+
 
 Z7_COM7F_IMF(CAgentFolder::CopyTo(Int32 moveMode, const UInt32 *indices, UInt32 numItems,
     Int32 includeAltStreams, Int32 replaceAltStreamCharsMode,
