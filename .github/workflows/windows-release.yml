@@ -1,6 +1,9 @@
 name: Windows release package
 
 on:
+  push:
+    tags:
+      - '7zip-*-lopple.*'
   workflow_dispatch:
     inputs:
       release_tag:
@@ -30,31 +33,51 @@ jobs:
   build:
     name: Build Windows x64 package
     runs-on: windows-2022
+    outputs:
+      release_name: ${{ steps.release.outputs.name }}
 
     steps:
+      - name: Resolve release name
+        id: release
+        shell: pwsh
+        env:
+          DISPATCH_RELEASE_TAG: ${{ inputs.release_tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          $releaseName = $env:DISPATCH_RELEASE_TAG
+          if ([string]::IsNullOrWhiteSpace($releaseName)) {
+            $releaseName = $env:REF_NAME
+          }
+          if ([string]::IsNullOrWhiteSpace($releaseName)) {
+            throw 'Could not resolve release name from workflow input or git ref name.'
+          }
+
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "name=$releaseName" -Encoding UTF8
+          Write-Host "Release name: $releaseName"
+
       - name: Check out source
         uses: actions/checkout@v4
 
       - name: Build release package
         shell: pwsh
         run: |
-          ./tools/build-release-package.ps1 -ReleaseName '${{ inputs.release_tag }}'
+          ./tools/build-release-package.ps1 -ReleaseName '${{ steps.release.outputs.name }}'
 
       - name: Upload release package artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-release-package
           path: |
-            build/release/${{ inputs.release_tag }}-windows-x64-custom.zip
-            build/release/${{ inputs.release_tag }}-windows-x64-custom.zip.sha256
-            build/release/${{ inputs.release_tag }}-release-notes.md
+            build/release/${{ steps.release.outputs.name }}-windows-x64-custom.zip
+            build/release/${{ steps.release.outputs.name }}-windows-x64-custom.zip.sha256
+            build/release/${{ steps.release.outputs.name }}-release-notes.md
           if-no-files-found: error
 
   release:
     name: Create GitHub Release
     runs-on: windows-2022
     needs: build
-    if: ${{ inputs.create_release }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release }}
     permissions:
       contents: write
 
@@ -69,8 +92,8 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
-          RELEASE_TITLE: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.build.outputs.release_name }}
+          RELEASE_TITLE: ${{ needs.build.outputs.release_name }}
           RELEASE_DRAFT: ${{ inputs.draft }}
           RELEASE_PRERELEASE: ${{ inputs.prerelease }}
         run: |
